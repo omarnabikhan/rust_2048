@@ -1,5 +1,8 @@
 use std::io;
 
+mod board;
+
 fn main() {
-    println!("Hello, world!");
+    let test = board::Board::startpos();
+    println!("{}", test);
 }
