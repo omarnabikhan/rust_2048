@@ -1,6 +1,9 @@
 use rand;
 use rand::Rng;
 
+use crate::board::Direction::*;
+use std::fmt::Debug;
+
 pub struct Board {
     rows: [[usize; 4]; 4]
 }
@@ -39,6 +42,63 @@ impl Board {
             rows
         }
     }
+
+    /// Swipe the board in a certain direction,
+    /// check for victory,
+    /// add an additional tile where possible,
+    /// and then check for defeat.
+    /// Returns Err if the game is over.
+    pub fn mv(&mut self, dir: Direction) -> Result<(),()> {
+        match self.merge(dir) {
+            Ok(_) => println!("Successfully merged"),
+            Err(_) => println!("Failed to merge")
+        }
+        if self.is_win() {
+
+        }
+        // add new 2 or 4
+        if self.is_loss() {
+            Err(())
+        }
+        Ok(())
+    }
+
+    /// Attempt to merge in a direction
+    fn merge(&mut self, dir: Direction) -> Result<(),()> {
+        if self.is_mergeable(dir) {
+            match dir {
+
+            }
+        } else {
+            Err(())
+        }
+    }
+    
+    /// Check that board can be merged in a direction
+    fn is_mergeable(&self, dir: Direction) -> bool {
+        match dir {
+
+        }
+    }
+
+    fn is_win(&self) -> bool {
+        for r in &self.rows {
+            for i in r {
+                if *i == 2048 {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    /// Check that no merges can be done in any direction
+    fn is_loss(&self) -> bool {
+        !(self.is_mergeable(Up)
+        || self.is_mergeable(Down)
+        || self.is_mergeable(Left)
+        || self.is_mergeable(Right))
+    }
 }
 
 impl std::fmt::Display for Board {
@@ -67,5 +127,23 @@ impl std::fmt::Display for Board {
             writeln!(f, "\n{}", separator)?;
         }
         Ok(())
+    }
+}
+
+enum Direction {
+    Up, Down, Left, Right
+}
+
+impl std::fmt::Display for Direction {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            match self {
+                Left  => "←",
+                Up    => "↑",
+                Right => "→",
+                Down  => "↓",
+            }
+        )
     }
 }
