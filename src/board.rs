@@ -58,7 +58,7 @@ impl Board {
         }
         // add new 2 or 4
         if self.is_loss() {
-            Err(())
+            return Err(());
         }
         Ok(())
     }
@@ -66,9 +66,10 @@ impl Board {
     /// Attempt to merge in a direction
     fn merge(&mut self, dir: Direction) -> Result<(),()> {
         if self.is_mergeable(dir) {
-            match dir {
-
-            }
+            // match dir {
+            //
+            // }
+            Err(())
         } else {
             Err(())
         }
@@ -76,9 +77,56 @@ impl Board {
     
     /// Check that board can be merged in a direction
     fn is_mergeable(&self, dir: Direction) -> bool {
+        let condition = |prev: usize, curr: usize| {
+            (prev == 0 && curr != 0) || (prev != 0 && prev == curr)
+        };
         match dir {
-
+            Down => {
+                for col in 0..4 {
+                    let mut prev = self.rows[3][col];
+                    for r in self.rows.iter().rev().skip(1) {
+                        if condition(prev, r[col]) {
+                            return true;
+                        }
+                        prev = r[col];
+                    }
+                }
+            },
+            Up => {
+                for col in 0..4 {
+                    let mut prev = self.rows[0][col];
+                    for r in self.rows.iter().skip(1) {
+                        if condition(prev, r[col]) {
+                            return true;
+                        }
+                        prev = r[col];
+                    }
+                }
+            },
+            Right => {
+                for r in &self.rows {
+                    let mut prev = r[0];
+                    for curr in r.iter().skip(1) {
+                        if condition(prev, *curr) {
+                            return true;
+                        }
+                        prev = *curr;
+                    }
+                }
+            },
+            Left => {
+                for r in &self.rows {
+                    let mut prev = r[3];
+                    for curr in r.iter().rev().skip(1) {
+                        if condition(prev, *curr) {
+                            return true;
+                        }
+                        prev = *curr;
+                    }
+                }
+            },
         }
+        false
     }
 
     fn is_win(&self) -> bool {
@@ -138,7 +186,7 @@ impl std::fmt::Display for Direction {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
             f,
-            match self {
+            "{}", match self {
                 Left  => "←",
                 Up    => "↑",
                 Right => "→",
