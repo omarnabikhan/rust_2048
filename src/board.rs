@@ -2,7 +2,7 @@ use rand;
 use rand::Rng;
 
 use crate::board::Direction::*;
-use crate::board::MoveResult::{Loss, Ongoing, NoMove, Win};
+use crate::board::MoveOutcome::{Loss, Ongoing, NoMove, Win};
 
 const TWO_CHANCE: f64 = 0.75;
 
@@ -65,7 +65,7 @@ impl Board {
     /// check for victory,
     /// add an additional tile where possible,
     /// and then check for defeat.
-    pub fn mv(&mut self, dir: Direction) -> MoveResult {
+    pub fn mv(&mut self, dir: Direction) -> MoveOutcome {
         if !self.is_mergeable(dir) {
             return NoMove;
         }
@@ -87,7 +87,7 @@ impl Board {
                     }
                 }
             }
-            zero_indices[rng.gen_range(0, zero_indices.len())]
+            zero_indices[rng.gen_range(0..zero_indices.len())]
         };
 
         self.rows[r][c] = if rng.gen_bool(TWO_CHANCE) { 2 } else { 4 };
@@ -108,7 +108,11 @@ impl Board {
                     let mut arr = [0; 4]; // build new array from right
                     let mut i = 3;
                     let mut row_iter = r.iter().filter(|x| **x != 0).rev();
-                    let mut prev = *row_iter.next().expect("couldn't get nonzero value from array");
+                    let mut prev;
+                    match row_iter.next() {
+                        Some(n) => prev = *n,
+                        None => continue,
+                    }
                     for val in row_iter {
                     // go through row, record nonzero values, calculate new row
                         if prev == *val {
@@ -136,7 +140,11 @@ impl Board {
                     let mut arr = [0; 4]; // build new array from left
                     let mut i = 0;
                     let mut row_iter = r.iter().filter(|x| **x != 0);
-                    let mut prev = *row_iter.next().expect("couldn't get nonzero value from array");
+                    let mut prev;
+                    match row_iter.next() {
+                        Some(n) => prev = *n,
+                        None => continue,
+                    }
                     for val in row_iter {
                     // go through row, record nonzero values, calculate new row
                         if prev == *val {
@@ -344,12 +352,12 @@ impl std::fmt::Display for Board {
     }
 }
 
-enum MoveResult {
+pub enum MoveOutcome {
     Ongoing, Win, Loss, NoMove
 }
 
 #[derive(Clone, Copy)]
-enum Direction {
+pub enum Direction {
     Up, Down, Left, Right
 }
 
