@@ -140,8 +140,86 @@ impl Board {
                     self.rows[r_index] = arr;
                 }
             },
+            Up => {
+                let mut new_rows = [[0;4];4];
+                for c_index in 0..self.rows[0].len() {
+                    let mut old_col = [0;4];
+                    {
+                        let mut i = 0;
+                        for r in self.rows.iter() {
+                            old_col[i] = r[c_index];
+                            i += 1;
+                        }
+                    }
 
-            _ => panic!(),
+                    let mut i = 0;
+                    let mut col_iter = old_col.iter().filter(|x| **x != 0);
+                    let mut prev;
+                    match col_iter.next() {
+                        Some(n) => prev = *n,
+                        None => continue,
+                    }
+                    for val in col_iter {
+                        // go through col, record nonzero values, calculate new row
+                        if prev == *val {
+                            new_rows[i][c_index] = 2 * prev;
+                            prev = 0; // to prevent too many doublings
+                        } else {
+                            if prev == 0 {
+                                prev = *val;
+                                continue;
+                            }
+                            new_rows[i][c_index] = prev;
+                            prev = *val;
+                        }
+                        i += 1;
+                    }
+                    if prev != 0 {
+                        new_rows[i][c_index] = prev;
+                    }
+                }
+                self.rows = new_rows;
+            },
+            Down => {
+                let mut new_rows = [[0;4];4];
+                for c_index in 0..self.rows[0].len() {
+                    let mut old_col = [0;4];
+                    {
+                        let mut i = 0;
+                        for r in self.rows.iter() {
+                            old_col[i] = r[c_index];
+                            i += 1;
+                        }
+                    }
+
+                    let mut i = 3;
+                    let mut col_iter = old_col.iter().filter(|x| **x != 0).rev();
+                    let mut prev;
+                    match col_iter.next() {
+                        Some(n) => prev = *n,
+                        None => continue,
+                    }
+                    for val in col_iter {
+                        // go through col, record nonzero values, calculate new row
+                        if prev == *val {
+                            new_rows[i][c_index] = 2 * prev;
+                            prev = 0; // to prevent too many doublings
+                        } else {
+                            if prev == 0 {
+                                prev = *val;
+                                continue;
+                            }
+                            new_rows[i][c_index] = prev;
+                            prev = *val;
+                        }
+                        i -= 1;
+                    }
+                    if prev != 0 {
+                        new_rows[i][c_index] = prev;
+                    }
+                }
+                self.rows = new_rows;
+            },
         }
     }
     
@@ -387,7 +465,7 @@ mod testing {
     }
     #[test]
     fn test_merge_8() {
-        let board = Board {
+        let mut board = Board {
             rows: [
                 [2,3,4,5],
                 [1,5,6,1],
@@ -395,10 +473,22 @@ mod testing {
                 [4,5,6,2],
             ]
         };
+        let merge_u = Board {
+            rows: [
+                [2,3,4,5],
+                [1,5,6,1],
+                [5,7,1,4],
+                [4,5,6,0],
+            ]
+        };
         assert!(board.is_mergeable(Up));
         assert!(board.is_mergeable(Down));
         assert_eq!(false, board.is_mergeable(Left));
         assert_eq!(false, board.is_mergeable(Right));
+        println!("{}", board);
+        board.merge(Up);
+        println!("{}", board);
+        assert_eq!(board, merge_u)
     }
     #[test]
     fn test_merge_9() {
@@ -442,5 +532,48 @@ mod testing {
         assert_eq!(board, merge_r);
         board2.merge(Left);
         assert_eq!(board2, merge_l);
+    }
+    #[test]
+    fn test_merge_10() {
+        let mut board = Board {
+            rows: [
+                [1,2,3,4],
+                [1,2,3,4],
+                [1,2,3,4],
+                [1,2,3,4],
+            ]
+        };
+        let mut board2 = Board {
+            rows: [
+                [1,2,3,4],
+                [1,2,3,4],
+                [1,2,3,4],
+                [1,2,3,4],
+            ]
+        };
+        let merge_d = Board {
+            rows: [
+                [0;4],
+                [0;4],
+                [2,4,6,8],
+                [2,4,6,8],
+            ]
+        };
+        let merge_u = Board {
+            rows: [
+                [2,4,6,8],
+                [2,4,6,8],
+                [0;4],
+                [0;4],
+            ]
+        };
+        assert!(board.is_mergeable(Up));
+        assert!(board.is_mergeable(Down));
+        assert_eq!(false, board.is_mergeable(Left));
+        assert_eq!(false, board.is_mergeable(Right));
+        board.merge(Up);
+        assert_eq!(board, merge_u);
+        board2.merge(Down);
+        assert_eq!(board2, merge_d);
     }
 }
