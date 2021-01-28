@@ -2,6 +2,9 @@ use rand;
 use rand::Rng;
 
 use crate::board::Direction::*;
+use crate::board::MoveResult::{Loss, Ongoing, NoMove, Win};
+
+const TWO_CHANCE: f64 = 0.75;
 
 #[derive(Debug)]
 pub struct Board {
@@ -45,7 +48,7 @@ impl Board {
 
         let mut rows = [[0; 4]; 4];
         let mut two_or_four = || {
-            if rng.gen_bool(0.75) {
+            if rng.gen_bool(TWO_CHANCE) {
                 2
             } else {
                 4
@@ -62,23 +65,38 @@ impl Board {
     /// check for victory,
     /// add an additional tile where possible,
     /// and then check for defeat.
-    /// Returns Err if the game is over.
-    pub fn mv(&mut self, dir: Direction) -> Result<(),()> {
-        if self.is_mergeable(dir) {
-            self.merge(dir);
-        } else {
-            // no turn
-
+    pub fn mv(&mut self, dir: Direction) -> MoveResult {
+        if !self.is_mergeable(dir) {
+            return NoMove;
         }
+
+        self.merge(dir);
 
         if self.is_win() {
+            return Win;
+        }
 
-        }
         // add new 2 or 4
+        let mut rng = rand::thread_rng();
+        let (r,c) = {
+            let mut zero_indices: Vec<(usize, usize)> = Vec::new();
+            for i in 0..self.rows.len() {
+                for j in 0..self.rows[0].len() {
+                    if self.rows[i][j] == 0 {
+                        zero_indices.push((i, j));
+                    }
+                }
+            }
+            zero_indices[rng.gen_range(0, zero_indices.len())]
+        };
+
+        self.rows[r][c] = if rng.gen_bool(TWO_CHANCE) { 2 } else { 4 };
+
         if self.is_loss() {
-            return Err(());
+            return Loss;
+        } else {
+            return Ongoing;
         }
-        Ok(())
     }
 
     /// Merge in a direction.
@@ -324,6 +342,10 @@ impl std::fmt::Display for Board {
         }
         Ok(())
     }
+}
+
+enum MoveResult {
+    Ongoing, Win, Loss, NoMove
 }
 
 #[derive(Clone, Copy)]
