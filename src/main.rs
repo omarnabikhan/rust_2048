@@ -17,12 +17,11 @@ fn main() {
             io::stdin().read_line(&mut input).expect("Failed to read input");
             &input.trim()
         };
-        println!("You entered {}.", input);
         let result = match input {
-            "w" => Ok(b.mv(Up)),
-            "a" => Ok(b.mv(Left)),
-            "s" => Ok(b.mv(Down)),
-            "d" => Ok(b.mv(Right)),
+            "w" => { println!("You entered {}", Up); Ok(b.mv(Up)) },
+            "a" => { println!("You entered {}", Left); Ok(b.mv(Left)) },
+            "s" => { println!("You entered {}", Down); Ok(b.mv(Down)) },
+            "d" => { println!("You entered {}", Right); Ok(b.mv(Right)) },
             _ => Err(()),
         };
         match result {
