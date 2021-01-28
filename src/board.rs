@@ -2,11 +2,26 @@ use rand;
 use rand::Rng;
 
 use crate::board::Direction::*;
-use std::fmt::Debug;
 
+#[derive(Debug)]
 pub struct Board {
     rows: [[usize; 4]; 4]
 }
+
+impl PartialEq for Board {
+    fn eq(&self, other: &Self) -> bool {
+        for (r1, r2) in self.rows.iter().zip(other.rows.iter()) {
+            for (val1,val2) in r1.iter().zip(r2.iter()) {
+                if *val1 != *val2 {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+}
+
+impl Eq for Board {}
 
 impl Board {
     /// Generate an empty position for 2048.
@@ -70,10 +85,11 @@ impl Board {
     fn merge(&mut self, dir: Direction) {
         match dir {
             Right => {
-                for r in self.rows.iter_mut() {
+                for r_index in 0..self.rows.len() {
+                    let r = self.rows[r_index];
                     let mut arr = [0; 4]; // build new array from right
                     let mut i = 3;
-                    let mut row_iter = r.iter().filter(|x| **x > 0).rev();
+                    let mut row_iter = r.iter().filter(|x| **x != 0).rev();
                     let mut prev = *row_iter.next().expect("couldn't get nonzero value from array");
                     for val in row_iter {
                     // go through row, record nonzero values, calculate new row
@@ -93,8 +109,38 @@ impl Board {
                     if prev != 0 {
                         arr[i] = prev;
                     }
+                    self.rows[r_index] = arr;
                 }
-            }
+            },
+            Left => {
+                for r_index in 0..self.rows.len() {
+                    let r = self.rows[r_index];
+                    let mut arr = [0; 4]; // build new array from left
+                    let mut i = 0;
+                    let mut row_iter = r.iter().filter(|x| **x != 0);
+                    let mut prev = *row_iter.next().expect("couldn't get nonzero value from array");
+                    for val in row_iter {
+                    // go through row, record nonzero values, calculate new row
+                        if prev == *val {
+                            arr[i] = 2 * prev;
+                            prev = 0; // to prevent too many doublings
+                        } else {
+                            if prev == 0 {
+                                prev = *val;
+                                continue;
+                            }
+                            arr[i] = prev;
+                            prev = *val;
+                        }
+                        i += 1;
+                    }
+                    if prev != 0 {
+                        arr[i] = prev;
+                    }
+                    self.rows[r_index] = arr;
+                }
+            },
+
             _ => panic!(),
         }
     }
@@ -353,5 +399,48 @@ mod testing {
         assert!(board.is_mergeable(Down));
         assert_eq!(false, board.is_mergeable(Left));
         assert_eq!(false, board.is_mergeable(Right));
+    }
+    #[test]
+    fn test_merge_9() {
+        let mut board = Board {
+            rows: [
+                [2,4,4,5],
+                [1,5,6,1],
+                [5,7,1,2],
+                [4,5,6,1],
+            ]
+        };
+        let mut board2 = Board {
+            rows: [
+                [2,4,4,5],
+                [1,5,6,1],
+                [5,7,1,2],
+                [4,5,6,1],
+            ]
+        };
+        let merge_r = Board {
+            rows: [
+                [0,2,8,5],
+                [1,5,6,1],
+                [5,7,1,2],
+                [4,5,6,1],
+            ]
+        };
+        let merge_l = Board {
+            rows: [
+                [2,8,5,0],
+                [1,5,6,1],
+                [5,7,1,2],
+                [4,5,6,1],
+            ]
+        };
+        assert!(board.is_mergeable(Right));
+        assert!(board.is_mergeable(Left));
+        assert_eq!(false, board.is_mergeable(Down));
+        assert_eq!(false, board.is_mergeable(Up));
+        board.merge(Right);
+        assert_eq!(board, merge_r);
+        board2.merge(Left);
+        assert_eq!(board2, merge_l);
     }
 }
