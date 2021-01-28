@@ -49,10 +49,13 @@ impl Board {
     /// and then check for defeat.
     /// Returns Err if the game is over.
     pub fn mv(&mut self, dir: Direction) -> Result<(),()> {
-        match self.merge(dir) {
-            Ok(_) => println!("Successfully merged"),
-            Err(_) => println!("Failed to merge")
+        if self.is_mergeable(dir) {
+            self.merge(dir);
+        } else {
+            // no turn
+
         }
+
         if self.is_win() {
 
         }
@@ -63,15 +66,36 @@ impl Board {
         Ok(())
     }
 
-    /// Attempt to merge in a direction
-    fn merge(&mut self, dir: Direction) -> Result<(),()> {
-        if self.is_mergeable(dir) {
-            // match dir {
-            //
-            // }
-            Err(())
-        } else {
-            Err(())
+    /// Merge in a direction.
+    fn merge(&mut self, dir: Direction) {
+        match dir {
+            Right => {
+                for r in self.rows.iter_mut() {
+                    let mut arr = [0; 4]; // build new array from right
+                    let mut i = 3;
+                    let mut row_iter = r.iter().filter(|x| **x > 0).rev();
+                    let mut prev = *row_iter.next().expect("couldn't get nonzero value from array");
+                    for val in row_iter {
+                    // go through row, record nonzero values, calculate new row
+                        if prev == *val {
+                            arr[i] = 2 * prev;
+                            prev = 0; // to prevent too many doublings
+                        } else {
+                            if prev == 0 {
+                                prev = *val;
+                                continue;
+                            }
+                            arr[i] = prev;
+                            prev = *val;
+                        }
+                        i -= 1;
+                    }
+                    if prev != 0 {
+                        arr[i] = prev;
+                    }
+                }
+            }
+            _ => panic!(),
         }
     }
     
@@ -103,7 +127,7 @@ impl Board {
                     }
                 }
             },
-            Right => {
+            Left => {
                 for r in &self.rows {
                     let mut prev = r[0];
                     for curr in r.iter().skip(1) {
@@ -114,7 +138,7 @@ impl Board {
                     }
                 }
             },
-            Left => {
+            Right => {
                 for r in &self.rows {
                     let mut prev = r[3];
                     for curr in r.iter().rev().skip(1) {
@@ -178,6 +202,7 @@ impl std::fmt::Display for Board {
     }
 }
 
+#[derive(Clone, Copy)]
 enum Direction {
     Up, Down, Left, Right
 }
@@ -193,5 +218,140 @@ impl std::fmt::Display for Direction {
                 Down  => "↓",
             }
         )
+    }
+}
+
+mod testing {
+    use crate::board::{Board, Direction};
+    use crate::board::Direction::*;
+
+    #[test]
+    fn test_merge_1() {
+        let board = Board {
+            rows: [
+                [0;4],
+                [0;4],
+                [0,1,0,0],
+                [0;4],
+            ]
+        };
+        assert!(board.is_mergeable(Right));
+        assert!(board.is_mergeable(Left));
+        assert!(board.is_mergeable(Down));
+        assert!(board.is_mergeable(Up));
+    }
+
+    #[test]
+    fn test_merge_2() {
+        let board = Board {
+            rows: [
+                [0;4],
+                [0;4],
+                [1,0,0,0],
+                [0;4],
+            ]
+        };
+        assert!(board.is_mergeable(Right));
+        assert_eq!(board.is_mergeable(Left), false);
+        assert!(board.is_mergeable(Down));
+        assert!(board.is_mergeable(Up));
+    }
+    #[test]
+    fn test_merge_3() {
+        let board = Board {
+            rows: [
+                [1;4],
+                [1;4],
+                [1;4],
+                [1;4],
+            ]
+        };
+        assert!(board.is_mergeable(Right));
+        assert!(board.is_mergeable(Left));
+        assert!(board.is_mergeable(Down));
+        assert!(board.is_mergeable(Up));
+    }
+    #[test]
+    fn test_merge_4() {
+        let board = Board {
+            rows: [
+                [1;4],
+                [2;4],
+                [3;4],
+                [4;4],
+            ]
+        };
+        assert!(board.is_mergeable(Right));
+        assert!(board.is_mergeable(Left));
+        assert_eq!(false, board.is_mergeable(Down));
+        assert_eq!(false, board.is_mergeable(Up));
+    }
+    #[test]
+    fn test_merge_5() {
+        let mut k = 1;
+        let mut rows = [[0;4];4];
+        for i in 0..(rows.len()) {
+            for j in 0..(rows[0].len()) {
+                rows[i][j] = k;
+                k += 1;
+            }
+        }
+        let board = Board {
+            rows
+        };
+        println!("{}", board);
+        assert_eq!(false, board.is_mergeable(Right));
+        assert_eq!(false, board.is_mergeable(Left));
+        assert_eq!(false, board.is_mergeable(Down));
+        assert_eq!(false, board.is_mergeable(Up));
+    }
+    #[test]
+    fn test_merge_6() {
+        let mut k = 0;
+        let mut rows = [[0;4];4];
+        for i in 0..(rows.len()) {
+            for j in 0..(rows[0].len()) {
+                rows[i][j] = k;
+                k += 1;
+            }
+        }
+        let board = Board {
+            rows
+        };
+        println!("{}", board);
+        assert_eq!(false, board.is_mergeable(Right));
+        assert_eq!(true, board.is_mergeable(Left));
+        assert_eq!(false, board.is_mergeable(Down));
+        assert_eq!(true, board.is_mergeable(Up));
+    }
+    #[test]
+    fn test_merge_7() {
+        let board = Board {
+            rows: [
+                [2,3,4,5],
+                [1,5,6,1],
+                [5,1,1,2],
+                [4,5,6,7],
+            ]
+        };
+        assert!(board.is_mergeable(Right));
+        assert!(board.is_mergeable(Left));
+        assert_eq!(false, board.is_mergeable(Down));
+        assert_eq!(false, board.is_mergeable(Up));
+    }
+    #[test]
+    fn test_merge_8() {
+        let board = Board {
+            rows: [
+                [2,3,4,5],
+                [1,5,6,1],
+                [5,7,1,2],
+                [4,5,6,2],
+            ]
+        };
+        assert!(board.is_mergeable(Up));
+        assert!(board.is_mergeable(Down));
+        assert_eq!(false, board.is_mergeable(Left));
+        assert_eq!(false, board.is_mergeable(Right));
     }
 }
